@@ -16,17 +16,17 @@
 
 package com.tang.intellij.lua.debugger.remote;
 
+import com.google.common.collect.Lists;
 import com.intellij.icons.AllIcons;
 import com.intellij.ui.ColoredTextContainer;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.xdebugger.XSourcePosition;
 import com.intellij.xdebugger.evaluation.XDebuggerEvaluator;
-import com.intellij.xdebugger.frame.XCompositeNode;
-import com.intellij.xdebugger.frame.XNamedValue;
-import com.intellij.xdebugger.frame.XStackFrame;
-import com.intellij.xdebugger.frame.XValueChildrenList;
+import com.intellij.xdebugger.frame.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
 
 /**
  *
@@ -38,6 +38,7 @@ public class LuaMobStackFrame extends XStackFrame {
     private String functionName;
     private XSourcePosition position;
     private XValueChildrenList values = new XValueChildrenList();
+    private XValueChildrenList up_values = new XValueChildrenList();
 
     public LuaMobStackFrame(String functionName, XSourcePosition position) {
         this.functionName = functionName;
@@ -56,13 +57,34 @@ public class LuaMobStackFrame extends XStackFrame {
         return position;
     }
 
-    public void addValue(XNamedValue namedValue) {
+    public void addLocalValue(XNamedValue namedValue) {
         values.add(namedValue);
+    }
+
+    public void addUpValue(XNamedValue namedValue) {
+        up_values.add(namedValue);
     }
 
     @Override
     public void computeChildren(@NotNull XCompositeNode node) {
-        node.addChildren(values, true);
+        final ArrayList<XValueGroup> group = Lists.newArrayList();
+        group.add(new XValueGroup("upvalue") {
+            @Override
+            public void computeChildren(@NotNull XCompositeNode node) {
+                node.addChildren(up_values, true);
+            }
+        });
+        group.add(new XValueGroup("locals") {
+            @Override
+            public void computeChildren(@NotNull XCompositeNode node) {
+                node.addChildren(values, true);
+            }
+            @Override
+            public boolean isAutoExpand() {
+                return true;
+            }
+        });
+        node.addChildren(XValueChildrenList.topGroups( group ), true);
     }
 
     public void customizePresentation(@NotNull ColoredTextContainer component) {

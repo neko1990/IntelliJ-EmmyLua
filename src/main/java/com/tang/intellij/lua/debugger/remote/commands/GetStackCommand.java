@@ -108,8 +108,8 @@ public class GetStackCommand extends DefaultCommand {
 
                 LuaMobStackFrame frame = new LuaMobStackFrame(functionName, position);
 
-                parseValues(stackValue.get(2).checktable(), frame);
-                parseValues(stackValue.get(3).checktable(), frame);
+                parseLocalValues(stackValue.get(2).checktable(), frame);
+                parseUpValues(stackValue.get(3).checktable(), frame);
 
                 frames.add(frame);
             }
@@ -117,13 +117,23 @@ public class GetStackCommand extends DefaultCommand {
         }
     }
 
-    private void parseValues(LuaTable paramsTable, LuaMobStackFrame frame) {
+    private void parseLocalValues(LuaTable paramsTable, LuaMobStackFrame frame) {
         LuaValue[] keys = paramsTable.keys();
         for (LuaValue key : keys) {
             LuaValue luaValue = paramsTable.get(key);
             LuaValue desc = luaValue.get(2);
             LuaRValue xValue = LuaRValue.create(key.toString(), luaValue.get(1), desc.toString());
-            frame.addValue(xValue);
+            frame.addLocalValue(xValue);
+        }
+    }
+
+    private void parseUpValues(LuaTable paramsTable, LuaMobStackFrame frame) {
+        LuaValue[] keys = paramsTable.keys();
+        for (LuaValue key : keys) {
+            LuaValue luaValue = paramsTable.get(key);
+            LuaValue desc = luaValue.get(2);
+            LuaRValue xValue = LuaRValue.create(key.toString(), luaValue.get(1), desc.toString());
+            frame.addUpValue(xValue);
         }
     }
 }
